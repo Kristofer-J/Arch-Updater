@@ -1,0 +1,156 @@
+#!/bin/bash
+
+# Sudo keepalive function - only runs in background when needed
+sudo_keepalive() {
+  sudo -v
+  while true; do
+    sleep 60
+    sudo -n true
+    kill -0 $$ 2>/dev/null || exit
+  done &
+}
+
+echo "🚀 System Update Manager"
+echo "========================"
+echo ""
+echo "What would you like to update?"
+echo "1) Everything (Pacman + AUR + Flatpak)"
+echo "2) System only (pacman, yay)"
+echo "3) Pacman only"
+echo "4) AUR only (yay)"
+echo "5) Flatpak only"
+echo "6) Check updates (no install)"
+echo ""
+read -p "Choose an option (1-6) [default: 1]: " choice
+choice=${choice:-1}
+echo ""
+
+# Build the update list based on choice
+updates=""
+dry_run=false
+case $choice in
+1) updates="pacman aur flatpak" ;;
+2) updates="system" ;;
+3) updates="pacman" ;;
+4) updates="aur" ;;
+5) updates="flatpak" ;;
+6)
+  updates="pacman aur flatpak"
+  dry_run=true
+  ;;
+*)
+  echo "❌ Invalid choice!"
+  exit 1
+  ;;
+esac
+
+# Show what will be updated
+if [[ $dry_run == true ]]; then
+  echo "📋 Checking available updates (no install):"
+else
+  echo "📋 You selected:"
+fi
+[[ $updates == *"pacman"* ]] && ! [[ $updates == "system" ]] && echo "  • Pacman packages"
+[[ $updates == "system" ]] && echo "  • System (Pacman + AUR with yay -Syu)"
+[[ $updates == *"aur"* ]] && ! [[ $updates == "system" ]] && echo "  • AUR packages"
+[[ $updates == *"flatpak"* ]] && echo "  • Flatpak applications"
+echo ""
+
+# Check if sudo is needed (not a dry-run and has pacman or aur)
+needs_sudo=false
+if [[ $dry_run == false ]] && [[ $updates == *"pacman"* || $updates == *"aur"* || $updates == "system" ]]; then
+  needs_sudo=true
+fi
+
+# Skip confirmation for dry-run
+if [[ $dry_run == false ]]; then
+  read -p "Continue? [Y/n]: " confirm
+  confirm=${confirm:-Y}
+  if [[ ! $confirm =~ ^[Yy]$ ]]; then
+    echo "❌ Update cancelled!"
+    exit 0
+  fi
+  
+  # Start sudo keepalive only if needed
+  if [[ $needs_sudo == true ]]; then
+    sudo_keepalive
+    echo "🔐 Sudo access initialized..."
+    echo ""
+  fi
+fi
+
+echo ""
+echo "🚀 Starting updates..."
+echo ""
+
+errors=false
+
+# Execute selected updates
+if [[ $updates == *"pacman"* ]] && ! [[ $updates == "system" ]]; then
+  echo "📦 Pacman packages:"
+  if [[ $dry_run == true ]]; then
+    checkupdates
+  else
+    sudo pacman -Syu --noconfirm
+    if [[ $? -ne 0 ]]; then
+      echo "❌ Error updating pacman packages!"
+      errors=true
+    fi
+  fi
+  echo "✅ Pacman check complete!"
+  echo ""
+fi
+
+if [[ $updates == "system" ]]; then
+  echo "📦 System updates (Pacman + AUR):"
+  if [[ $dry_run == true ]]; then
+    yay -Qu
+  else
+    yay -Syu --noconfirm
+    if [[ $? -ne 0 ]]; then
+      echo "❌ Error updating system!"
+      errors=true
+    fi
+  fi
+  echo "✅ System check complete!"
+  echo ""
+fi
+
+if [[ $updates == *"aur"* ]] && ! [[ $updates == "system" ]]; then
+  echo "🏎️  AUR packages:"
+  if [[ $dry_run == true ]]; then
+    yay -Qua
+  else
+    yay -Sua --noconfirm
+    if [[ $? -ne 0 ]]; then
+      echo "❌ Error updating AUR packages!"
+      errors=true
+    fi
+  fi
+  echo "✅ AUR check complete!"
+  echo ""
+fi
+
+if [[ $updates == *"flatpak"* ]]; then
+  echo "📦 Flatpak applications:"
+  if [[ $dry_run == true ]]; then
+    flatpak remote-ls --updates
+  else
+    flatpak update -y
+    if [[ $? -ne 0 ]]; then
+      echo "❌ Error updating Flatpak!"
+      errors=true
+    fi
+  fi
+  echo "✅ Flatpak check complete!"
+  echo ""
+fi
+
+# Final status
+if [[ $errors == true ]]; then
+  echo "⚠️  Some updates had errors! Check the messages above."
+  exit 1
+else
+  echo "🎉 All selected checks finished successfully!"
+  exit 0
+fi
