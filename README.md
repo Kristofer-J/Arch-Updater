@@ -2,6 +2,20 @@
 
 A simple Arch Linux updater with `--noconfirm` flags. It can update your system using **pacman**, **yay/AUR**, and **Flatpak**.
 
+## Screenshots
+
+### Update Menu
+
+The menu you get when running `update-all`, where you can choose what you want to update.
+
+![Update Menu](images/update-menu.png)
+
+### Update Process
+
+After selecting what you want to update, `update-all` asks for confirmation and then requests your root password before starting the update.
+
+![Update Process](images/updating.png)
+
 ## Installation
 
 1. Download the [`update-all`](https://github.com/Kristofer-J/Arch-Updater/blob/main/update-all) file from this repository.
