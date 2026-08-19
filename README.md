@@ -12,7 +12,7 @@ The menu you get when running `update-all`, where you can choose what you want t
 
 ### Update Process
 
-After selecting what you want to update, `update-all` asks for confirmation and then requests your root password before starting the update.
+After selecting what you want to update, `update-all` asks for confirmation and, when required, requests your root password before starting the update. `pacman` and AUR updates require `sudo`, while Flatpak updates do not.
 
 ![Update Process](images/updating.png)
 
