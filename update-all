@@ -3,6 +3,10 @@
 # Sudo keepalive function - only runs in background when needed
 sudo_keepalive() {
   sudo -v
+  if [[ $? -ne 0 ]]; then
+    echo "❌ Sudo access denied! Aborting update."
+    exit 1
+  fi
   while true; do
     sleep 60
     sudo -n true
