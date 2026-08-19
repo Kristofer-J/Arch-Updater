@@ -26,15 +26,26 @@ update-all
 
 ### If `update-all` doesn't work immediately
 
-Make sure you ran:
+Make sure the file is executable before running it:
 
 ```bash
 chmod +x update-all
 ```
 
-before moving the file to `~/.local/bin/`.
+If you've already moved it to `~/.local/bin/`, you can run:
 
-If the command still isn't recognized, **restart your terminal** so that your shell can pick up the `~/.local/bin` path.
+```bash
+chmod +x ~/.local/bin/update-all
+```
+
+Then try:
+
+```bash
+update-all
+```
+
+If it still doesn't work, restart your terminal so your shell can pick up `~/.local/bin` correctly.
+
 
 After that, simply run:
 
